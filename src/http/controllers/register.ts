@@ -1,7 +1,6 @@
-import { prisma } from "@/lib/prisma";
-import type { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { FastifyRequest, FastifyReply } from "fastify";
+import { registerUseCase } from "@/use-cases/register";
 
 
 export async function register (request: FastifyRequest, reply: FastifyReply) {
@@ -13,13 +12,15 @@ export async function register (request: FastifyRequest, reply: FastifyReply) {
 
   const {name, email, password} = registerBodySchema.parse(request.body);
 
-  await prisma.user.create({
-    data: {
+  try {
+    await registerUseCase({
       name,
       email,
-      password_hash: password,
-    } as Prisma.UserUncheckedCreateInput,
-  });
-
+      password,
+    })
+  } catch(e) {
+    return reply.status(409).send(e)
+  }
+  
   return reply.status(201).send();
 }
